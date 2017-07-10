@@ -14,11 +14,9 @@ class Viz extends React.Component {
     this.addNodes = this.addNodes.bind(this);
 
     this.state = {
-      k8Data:
-      {
+      k8Data: {
         "name": "Kubernetes API",
-        "children":
-        [
+        "children": [
           {
             "name": "Controller",
             "class": "kube-controller",
@@ -26,44 +24,13 @@ class Viz extends React.Component {
               {
                 "name": "Scheduler",
                 "class": "kube-scheduler",
-                "children": [
-                  {
-                    "name": "Node 1",
-                    "class": "kube-node",
-                    "children":
-                    [
-                      {
-                        "name": "Node 1 - Pod 1",
-                        "class": "kube-pod",
-                      },
-                      {
-                        "name": "Node 1 - Pod 2",
-                        "class": "kube-pod",
-                      }
-                    ]
-                  },
-                  {
-                    "name": "Node 2",
-                    "class": "kube-node",
-                    "children":
-                    [
-                      {
-                        "name": "Node 2 - Pod 1",
-                        "class": "kube-pod",
-                      },
-                      {
-                        "name": "Node 2 - Pod 2",
-                        "class": "kube-pod",
-                      }
-                    ]
-                  }
-                ]
-              },
+                "children": []
+              }
             ]
-          },
+          }
         ]
       }
-    }
+    };
 
 
     this.margin = {top: 20, right: 90, bottom: 30, left: 140}
@@ -77,16 +44,19 @@ class Viz extends React.Component {
 
   componentDidMount() {
     this.createD3Graph();
-    // let scheduler = this.state.k8Data['children'][0]['children'][0];
-    // this.addNodes(['Node 1', 'Node 2'], scheduler);
-    // this.updateTreeStructure();
+    this.addNodes(['Node 1', 'Node 2', 'Node 3']);
+    this.addPods(['Pod 1', 'Pod 2', 'Pod 3', 'Pod 4', 'Pod 5', 'Pod 6', 'Pod 7', 'Pod 8', 'Pod 9', 'Pod 10'])
+    this.updateTreeStructure();
   }
 
   componentDidUpdate() {
     this.updateTreeStructure();
   }
 
-  addNodes(names, scheduler) {
+  addNodes(names) {
+
+    let scheduler = this.getScheduler();
+
     console.log('scheduler before', scheduler);
     for (var index = 0; index < names.length; index++) {
       scheduler['children'].push({
@@ -95,12 +65,54 @@ class Viz extends React.Component {
       });
     }
 
-    console.log('scheduler after', scheduler);
-    this.setState({k8Data: scheduler});
+    this.setState(this.state);
   }
 
-  addPods() {
+  getScheduler() {
+    let rootState = this.state;
+    let controller = rootState.k8Data['children'][0];
+    let scheduler = controller['children'][0];
 
+    return scheduler;
+  }
+
+  addPods(podNames) {
+    // TODO : Make this a class attribute? Or even better, have each Node have a max-pods attribute?
+    let MAX_PODS_PER_NODE = 3;
+
+    let scheduler = this.getScheduler();
+    var nodeCount = scheduler['children'].length;
+    var nodeIndex = 0;
+
+    var node = scheduler['children'][nodeIndex];
+
+    for (var podIndex = 0; podIndex < podNames.length; podIndex++) {
+
+      let nodePodCount = node['children'].length;
+      console.log('Adding pod ' + podIndex + ' to node ' + nodeIndex + ' / ' + nodeCount + ' with pod count ' + nodePodCount);
+      if (nodePodCount == MAX_PODS_PER_NODE) {
+        if (nodeIndex < nodeCount - 1) {
+          // Schedule on the next available node
+          node = scheduler['children'][++nodeIndex];
+        } else  {
+          // We need to create a new Node to fit this pod
+          let newNode = {
+            name: 'Overflow-Node-' + (++nodeIndex),
+            children: []
+          };
+          scheduler['children'].push(newNode);
+          node = newNode;
+          nodeCount++;
+        }
+      }
+
+      node['children'].push({
+        name: podNames[podIndex],
+        children: []
+      });
+    }
+
+    this.setState(this.state);
   }
 
   createD3Graph() {
@@ -114,16 +126,17 @@ class Viz extends React.Component {
         .attr("transform", "translate("
               + this.margin.left + "," + this.margin.top + ")");
 
+    this.updateTreeStructure();
+  }
 
+  updateTreeStructure() {
+    // Clear existing nodes to replace them
+    this.svg.selectAll('.node').remove();
     // Assigns parent, children, height, depth
     this.root = d3.hierarchy(this.state.k8Data, function(d) { return d.children; });
     this.root.x0 = this.height / 2;
     this.root.y0 = 0;
 
-    this.updateTreeStructure();
-  }
-
-  updateTreeStructure() {
     var i = 0;
 
     // declares a tree layout and assigns the size
@@ -273,7 +286,13 @@ class Viz extends React.Component {
   }
 
   render() {
-    return <div id="area"/>
+    return (
+      <div>
+        <div id="area"></div>
+        <div>{JSON.stringify(this.state.k8Data)}</div>
+      </div>
+    )
+
   }
 }
 export default Viz;
