@@ -4,7 +4,7 @@
   "description": "visualization project for heptio",
   "main": "index.js",
   "scripts": {
-    "dev": "webpack -d --watch",
+    "dev": "webpack-dev-server",
     "build": "webpack -p"
   },
   "author": "@savannahjune",
@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "css-loader": "^0.28.4",
-    "style-loader": "^0.18.2"
+    "style-loader": "^0.18.2",
+    "webpack-dev-server": "^2.5.1"
   }
 }

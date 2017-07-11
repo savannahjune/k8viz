@@ -22,6 +22,10 @@ var config = {
         loaders: ['style-loader', 'css-loader']
       }
     ]
+  },
+  devServer: {
+    port: 3000,
+    contentBase: BUILD_DIR
   }
 };
 
