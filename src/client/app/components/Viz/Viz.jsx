@@ -288,6 +288,11 @@ class Viz extends React.Component {
   render() {
     return (
       <div>
+        <div className="header">
+          <div className="addButton">
+            <button onClick={() => {this.addPods(['newPod 7'])}}>Add a Pod</button>
+          </div>
+        </div>
         <div id="area"></div>
         <div>{JSON.stringify(this.state.k8Data)}</div>
       </div>
