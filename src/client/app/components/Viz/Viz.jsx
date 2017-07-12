@@ -16,6 +16,7 @@ class Viz extends React.Component {
     this.state = {
       k8Data: {
         "name": "Kubernetes API",
+        "class": "kube-api",
         "children": [
           {
             "name": "Controller",
@@ -29,7 +30,8 @@ class Viz extends React.Component {
             ]
           }
         ]
-      }
+      },
+      numPods: 10
     };
 
 
@@ -61,6 +63,7 @@ class Viz extends React.Component {
     for (var index = 0; index < names.length; index++) {
       scheduler['children'].push({
         name: names[index],
+        class: 'kube-node',
         children: []
       });
     }
@@ -77,7 +80,7 @@ class Viz extends React.Component {
   }
 
   addPods(podNames) {
-    // TODO : Make this a class attribute? Or even better, have each Node have a max-pods attribute?
+    // TODO : Make this a class attribute or give each Node a max-pods attribute
     let MAX_PODS_PER_NODE = 3;
 
     let scheduler = this.getScheduler();
@@ -89,29 +92,36 @@ class Viz extends React.Component {
     for (var podIndex = 0; podIndex < podNames.length; podIndex++) {
 
       let nodePodCount = node['children'].length;
-      console.log('Adding pod ' + podIndex + ' to node ' + nodeIndex + ' / ' + nodeCount + ' with pod count ' + nodePodCount);
-      if (nodePodCount == MAX_PODS_PER_NODE) {
-        if (nodeIndex < nodeCount - 1) {
+      while (nodePodCount === MAX_PODS_PER_NODE) {
+
+        if (nodeIndex < nodeCount - 1) { // If node exists
           // Schedule on the next available node
           node = scheduler['children'][++nodeIndex];
-        } else  {
-          // We need to create a new Node to fit this pod
+          nodePodCount = node['children'].length;
+        } else  { // We need to create a new Node to fit this pod
           let newNode = {
-            name: 'Overflow-Node-' + (++nodeIndex),
+            name: 'Node ' + (++nodeIndex),
+            class: 'kube-node',
             children: []
           };
           scheduler['children'].push(newNode);
           node = newNode;
           nodeCount++;
+          nodePodCount = 0;
         }
       }
 
+      console.log('Adding pod ' + podIndex + ' to node ' + (nodeIndex + 1) + ' / ' + nodeCount + ' with pod count ' + nodePodCount);
+
+      // Add pod to current node
       node['children'].push({
         name: podNames[podIndex],
+        class: 'kube-pod',
         children: []
       });
     }
 
+    this.state.numPods = this.state.numPods + 1;
     this.setState(this.state);
   }
 
@@ -119,19 +129,20 @@ class Viz extends React.Component {
     // append the svg object to the body of the page
     // appends a 'group' element to 'svg'
     // moves the 'group' element to the top left margin
-    this.svg = d3.select("#area").append("svg")
-        .attr("width", this.width + this.margin.right + this.margin.left)
-        .attr("height", this.height + this.margin.top + this.margin.bottom)
-      .append("g")
-        .attr("transform", "translate("
-              + this.margin.left + "," + this.margin.top + ")");
+    this.svg = d3.select('#viz-svg').append('svg')
+        .attr('width', this.width + this.margin.right + this.margin.left)
+        .attr('height', this.height + this.margin.top + this.margin.bottom)
+      .append('g')
+        .attr('transform', 'translate('
+              + this.margin.left + ',' + this.margin.top + ')');
 
     this.updateTreeStructure();
   }
 
   updateTreeStructure() {
-    // Clear existing nodes to replace them
+    // Clear existing nodes before replacing with new graph
     this.svg.selectAll('.node').remove();
+    // this.svg.selectAll('.kube-node').remove();
     // Assigns parent, children, height, depth
     this.root = d3.hierarchy(this.state.k8Data, function(d) { return d.children; });
     this.root.x0 = this.height / 2;
@@ -158,12 +169,12 @@ class Viz extends React.Component {
     var node = this.svg.selectAll('g.node')
         .data(nodes, function(d) {return d.id || (d.id = ++i); });
 
-    // Enter any new modes at the parent's previous position.
+    // Enter any new nodes at the parent's previous position.
     var root = this.root;
     var nodeEnter = node.enter().append('g')
         .attr('class', 'node')
-        .attr("transform", function(d) {
-          return "translate(" + root.y0 + "," + root.x0 + ")";
+        .attr('transform', function(d) {
+          return 'translate(' + root.y0 + ',' + root.x0 + ')';
       })
       .on('click', click);
 
@@ -171,21 +182,21 @@ class Viz extends React.Component {
     nodeEnter.append('circle')
         .attr('class', function(d) {
           if (d.data.class === undefined) {
-            return "node";
+            return 'node';
           } else {
-            return "node " + d.data.class;
+            return 'node ' + d.data.class;
           }
         })
         .attr('r', 1e-6);
 
     // Add labels for the nodes
     nodeEnter.append('text')
-        .attr("dy", ".35em")
-        .attr("x", function(d) {
+        .attr('dy', '-0.5em') // Place slightly to upper left/right
+        .attr('x', function(d) {
             return d.children || d._children ? -13 : 13;
         })
-        .attr("text-anchor", function(d) {
-            return d.children || d._children ? "end" : "start";
+        .attr('text-anchor', function(d) {
+            return d.children || d._children ? 'end' : 'start';
         })
         .text(function(d) { return d.data.name; });
 
@@ -195,24 +206,21 @@ class Viz extends React.Component {
     // Transition to the proper position for the node
     nodeUpdate.transition()
       .duration(this.duration)
-      .attr("transform", function(d) {
-          return "translate(" + d.y + "," + d.x + ")";
+      .attr('transform', function(d) {
+          return 'translate(' + d.y + ',' + d.x + ')';
        });
 
     // Update the node attributes and style
     nodeUpdate.select('circle.node')
       .attr('r', 10)
-      .style("fill", function(d) {
-          return d._children ? "lightsteelblue" : "#fff";
-      })
-      .attr('cursor', 'pointer');
+      // .attr('cursor', 'pointer');
 
 
     // Remove any exiting nodes
     var nodeExit = node.exit().transition()
         .duration(this.duration)
-        .attr("transform", function(d) {
-            return "translate(" + root.y + "," + root.x + ")";
+        .attr('transform', function(d) {
+            return 'translate(' + root.y + ',' + root.x + ')';
         })
         .remove();
 
@@ -231,8 +239,8 @@ class Viz extends React.Component {
         .data(links, function(d) { return d.id; });
 
     // Enter any new links at the parent's previous position.
-    var linkEnter = link.enter().insert('path', "g")
-        .attr("class", "link")
+    var linkEnter = link.enter().insert('path', 'g')
+        .attr('class', 'link')
         .attr('d', function(d){
           var o = {x: root.x0, y: root.y0}
           return diagonal(o, o)
@@ -289,12 +297,14 @@ class Viz extends React.Component {
     return (
       <div>
         <div className="header">
+          <div className="company-label">Heptio</div>
           <div className="addButton">
-            <button onClick={() => {this.addPods(['newPod 7'])}}>Add a Pod</button>
+            <button onClick={() => {this.addPods(['Pod ' + (this.state.numPods + 1)])}}>
+              Add a Pod
+            </button>
           </div>
         </div>
-        <div id="area"></div>
-        <div>{JSON.stringify(this.state.k8Data)}</div>
+        <div id="viz-svg"></div>
       </div>
     )
 

@@ -1,5 +1,5 @@
 .header {
-
+  font-family: Roboto;
 }
 
 .addButton {
@@ -8,19 +8,13 @@
 
 
 .node circle {
-  fill: steelblue;
-  stroke: steelblue;
-  stroke-width: 4px;
-}
-
-.kube-pod circle {
-  fill: red;
-  stroke: red;
-  stroke-width: 4px;
+  stroke:#ccc;
+  stroke-width: 2px;
 }
 
 .node text {
-  font: 12px sans-serif;
+  font: 14px;
+  font-family: Open Sans;
 }
 
 .link {
@@ -29,18 +23,22 @@
   stroke-width: 2px;
 }
 
+.kube-api {
+  fill: pink;
+}
+
 .kube-controller {
-  fill: red !important;
+  fill: red;
 }
 
 .kube-scheduler {
-  fill: yellow !important;
+  fill: yellow;
 }
 
 .kube-node {
-  fill: orange !important;
+  fill: orange;
 }
 
 .kube-pod {
-  fill: purple !important;
+  fill: purple;
 }
