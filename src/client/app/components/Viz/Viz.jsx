@@ -17,14 +17,17 @@ class Viz extends React.Component {
       k8Data: {
         "name": "Kubernetes API",
         "class": "kube-api",
+        "info": "The API server is a key component and serves the Kubernetes API using JSON over HTTP, which provides both the internal and external interface to Kubernetes.",
         "children": [
           {
             "name": "Controller",
             "class": "kube-controller",
+            "info": "A controller is a reconciliation loop that drives actual cluster state toward the desired cluster state.",
             "children": [
               {
                 "name": "Scheduler",
                 "class": "kube-scheduler",
+                "info" : "The scheduler is the pluggable component that selects which node an unscheduled pod (the basic entity managed by the scheduler) should run on based on resource availability.",
                 "children": []
               }
             ]
@@ -41,7 +44,7 @@ class Viz extends React.Component {
     this.svg;
     this.root;
 
-    this.duration = 750;
+    this.duration = 1000;
   }
 
   componentDidMount() {
@@ -58,13 +61,14 @@ class Viz extends React.Component {
   addNodes(names) {
     let scheduler = this.getScheduler();
 
-    console.log('scheduler before', scheduler);
     for (var index = 0; index < names.length; index++) {
-      scheduler['children'].push({
+      let newNode = {
         name: names[index],
         class: 'kube-node',
+        info: 'A nodes is the single machine (or virtual machine) where pods are deployed.',
         children: []
-      });
+      }
+      scheduler['children'].push(newNode);
     }
 
     this.setState(this.state);
@@ -101,6 +105,7 @@ class Viz extends React.Component {
           let newNode = {
             name: 'Node ' + (++nodeIndex),
             class: 'kube-node',
+            info: 'A nodes is the single machine (or virtual machine) where pods are deployed.',
             children: []
           };
           scheduler['children'].push(newNode);
@@ -110,12 +115,11 @@ class Viz extends React.Component {
         }
       }
 
-      console.log('Adding pod ' + podIndex + ' to node ' + (nodeIndex + 1) + ' / ' + nodeCount + ' with pod count ' + nodePodCount);
-      console.log('POD NAME?', podNames[podIndex], podNames, podIndex);
       // Add pod to current node
       node['children'].push({
         name: podNames[podIndex],
         class: 'kube-pod',
+        info: 'The basic scheduling unit in Kubernetes is called a "pod". It adds a higher level of abstraction to containerized components. A pod consists of one or more containers that are guaranteed to be co-located on the host machine and can share resources.',
         children: []
       });
     }
@@ -141,7 +145,7 @@ class Viz extends React.Component {
   updateTreeStructure() {
     // Clear existing nodes before replacing with new graph
     this.svg.selectAll('.node').remove();
-    // this.svg.selectAll('.kube-node').remove();
+
     // Assigns parent, children, height, depth
     this.root = d3.hierarchy(this.state.k8Data, function(d) { return d.children; });
     this.root.x0 = this.height / 2;
@@ -162,8 +166,6 @@ class Viz extends React.Component {
     // Normalize for fixed-depth.
     nodes.forEach(function(d){ d.y = d.depth * 180});
 
-    // ****************** Nodes section ***************************
-
     // Update the nodes...
     var node = this.svg.selectAll('g.node')
         .data(nodes, function(d) {return d.id || (d.id = ++i); });
@@ -173,21 +175,25 @@ class Viz extends React.Component {
 
     // Add tooltips for nodes
     var tooltip = d3.select('body')
-    	.append('div')
-    	.style('position', 'absolute')
-    	.style('z-index', '10')
-    	.style('visibility', 'hidden')
-      .text('simple');
+      .append('div')
+      .attr('class', 'tooltip')
+      .style('position', 'relative')
+      .style('opacity', 0);
 
     var nodeEnter = node.enter().append('g')
       .attr('class', 'node')
       .attr('transform', function(d) {
-        return 'translate(' + root.y0 + ',' + root.x0 + ')';
+        return 'translate(' + root.y0 + ',' + root.x0 + ')'
       })
-      .on('mouseover', function(){return tooltip.style('visibility', 'visible');})
-    	.on('mousemove', function(){return tooltip.style('top', (event.pageY-10)+'px').style('left',(event.pageX+10)+'px');})
-    	.on('mouseout', function(){return tooltip.style('visibility', 'hidden');});
-
+      .on('mouseover', () => {
+        return tooltip.style('opacity', 1);
+      })
+      .on('mousemove', (d) => {
+        return tooltip.text(d.data.info);
+      })
+      .on('mouseout', () => {
+        return tooltip.style('opacity', 0);
+      });
 
     // Add Circle for the nodes
     nodeEnter.append('circle')

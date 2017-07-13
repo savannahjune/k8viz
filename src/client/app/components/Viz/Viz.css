@@ -51,6 +51,11 @@
   font-family: Open Sans;
 }
 
+.tooltip {
+  font: 14px;
+  font-family: Open Sans;
+}
+
 .link {
   fill: none;
   stroke: #ccc;
@@ -58,21 +63,21 @@
 }
 
 .kube-api {
-  fill: pink;
+  fill: #1C110A;
 }
 
 .kube-controller {
-  fill: red;
+  fill: #A63D40;
 }
 
 .kube-scheduler {
-  fill: yellow;
+  fill: #E9B872;
 }
 
 .kube-node {
-  fill: orange;
+  fill: #90A959;
 }
 
 .kube-pod {
-  fill: purple;
+  fill: #6494AA;
 }
