@@ -38,8 +38,8 @@ class Viz extends React.Component {
     this.margin = {top: 20, right: 90, bottom: 30, left: 140}
     this.width = 960 - this.margin.left - this.margin.right,
     this.height = 500 - this.margin.top - this.margin.bottom;
-    this.svg = undefined;
-    this.root = undefined;
+    this.svg;
+    this.root;
 
     this.duration = 750;
   }
@@ -56,7 +56,6 @@ class Viz extends React.Component {
   }
 
   addNodes(names) {
-
     let scheduler = this.getScheduler();
 
     console.log('scheduler before', scheduler);
@@ -112,7 +111,7 @@ class Viz extends React.Component {
       }
 
       console.log('Adding pod ' + podIndex + ' to node ' + (nodeIndex + 1) + ' / ' + nodeCount + ' with pod count ' + nodePodCount);
-
+      console.log('POD NAME?', podNames[podIndex], podNames, podIndex);
       // Add pod to current node
       node['children'].push({
         name: podNames[podIndex],
@@ -171,12 +170,24 @@ class Viz extends React.Component {
 
     // Enter any new nodes at the parent's previous position.
     var root = this.root;
+
+    // Add tooltips for nodes
+    var tooltip = d3.select('body')
+    	.append('div')
+    	.style('position', 'absolute')
+    	.style('z-index', '10')
+    	.style('visibility', 'hidden')
+      .text('simple');
+
     var nodeEnter = node.enter().append('g')
-        .attr('class', 'node')
-        .attr('transform', function(d) {
-          return 'translate(' + root.y0 + ',' + root.x0 + ')';
+      .attr('class', 'node')
+      .attr('transform', function(d) {
+        return 'translate(' + root.y0 + ',' + root.x0 + ')';
       })
-      .on('click', click);
+      .on('mouseover', function(){return tooltip.style('visibility', 'visible');})
+    	.on('mousemove', function(){return tooltip.style('top', (event.pageY-10)+'px').style('left',(event.pageX+10)+'px');})
+    	.on('mouseout', function(){return tooltip.style('visibility', 'hidden');});
+
 
     // Add Circle for the nodes
     nodeEnter.append('circle')
@@ -213,7 +224,7 @@ class Viz extends React.Component {
     // Update the node attributes and style
     nodeUpdate.select('circle.node')
       .attr('r', 10)
-      // .attr('cursor', 'pointer');
+      .attr('cursor', 'pointer');
 
 
     // Remove any exiting nodes
@@ -231,8 +242,6 @@ class Viz extends React.Component {
     // On exit reduce the opacity of text labels
     nodeExit.select('text')
       .style('fill-opacity', 1e-6);
-
-    // ****************** links section ***************************
 
     // Update the links...
     var link = this.svg.selectAll('path.link')
@@ -259,7 +268,7 @@ class Viz extends React.Component {
         .duration(this.duration)
         .attr('d', function(d) {
           var o = {x: root.x, y: root.y}
-          return diagonal(o, o)
+          return diagonal(o, o);
         })
         .remove();
 
@@ -277,32 +286,18 @@ class Viz extends React.Component {
                     ${(source.y + destination.y) / 2} ${destination.x},
                     ${destination.y} ${destination.x}`
 
-      return path
+      return path;
     }
-
-      // Toggle children on click.
-      function click(d) {
-        if (d.children) {
-            d._children = d.children;
-            d.children = null;
-          } else {
-            d.children = d._children;
-            d._children = null;
-          }
-        update(d);
-      }
   }
 
   render() {
     return (
       <div>
         <div className="header">
-          <div className="company-label">Heptio</div>
-          <div className="addButton">
-            <button onClick={() => {this.addPods(['Pod ' + (this.state.numPods + 1)])}}>
+          <div className="company-label">Heptio Kubernetes Viz</div>
+            <div className="addButton" onClick={() => {this.addPods(['Pod ' + (this.state.numPods)])}}>
               Add a Pod
-            </button>
-          </div>
+            </div>
         </div>
         <div id="viz-svg"></div>
       </div>
