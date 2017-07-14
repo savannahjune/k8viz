@@ -38,7 +38,7 @@ class Viz extends React.Component {
     };
 
 
-    this.margin = {top: 20, right: 90, bottom: 30, left: 140}
+    this.margin = {top: 20, right: 90, bottom: 10, left: 140}
     this.width = 960 - this.margin.left - this.margin.right,
     this.height = 500 - this.margin.top - this.margin.bottom;
     this.svg;
@@ -177,7 +177,7 @@ class Viz extends React.Component {
     var tooltip = d3.select('body')
       .append('div')
       .attr('class', 'tooltip')
-      .style('position', 'relative')
+      .style('position', 'absolute')
       .style('opacity', 0);
 
     var nodeEnter = node.enter().append('g')
@@ -186,6 +186,7 @@ class Viz extends React.Component {
         return 'translate(' + root.y0 + ',' + root.x0 + ')'
       })
       .on('mouseover', () => {
+        console.log('event firing');
         return tooltip.style('opacity', 1);
       })
       .on('mousemove', (d) => {
