@@ -2,14 +2,12 @@ import React from 'react';
 import * as d3 from 'd3';
 import styles from './Viz.css';
 
-
 class Viz extends React.Component {
 
   constructor(props) {
     super(props);
 
     this.createD3Graph = this.createD3Graph.bind(this);
-
     this.updateTreeStructure = this.updateTreeStructure.bind(this);
     this.addNodes = this.addNodes.bind(this);
 
@@ -34,17 +32,15 @@ class Viz extends React.Component {
           }
         ]
       },
-      numPods: 10
+      numPods: 10 // Beginning number of pods to show to user
     };
-
 
     this.margin = {top: 20, right: 90, bottom: 10, left: 140}
     this.width = 960 - this.margin.left - this.margin.right,
     this.height = 500 - this.margin.top - this.margin.bottom;
+    this.duration = 1000;
     this.svg;
     this.root;
-
-    this.duration = 1000;
   }
 
   componentDidMount() {
@@ -58,6 +54,10 @@ class Viz extends React.Component {
     this.updateTreeStructure();
   }
 
+  /**
+   * addNodes() adds node to graph & state to update k8Data
+   * @param names Array of names of nodes to add to graph
+   */
   addNodes(names) {
     let scheduler = this.getScheduler();
 
@@ -74,6 +74,10 @@ class Viz extends React.Component {
     this.setState(this.state);
   }
 
+  /**
+   * getScheduler()
+   * grabs graph from root (API) to scheduler, useful to add nodes to.
+   */
   getScheduler() {
     let rootState = this.state;
     let controller = rootState.k8Data['children'][0];
@@ -82,6 +86,13 @@ class Viz extends React.Component {
     return scheduler;
   }
 
+  /**
+   * addPods()
+   * adds pods to nodes in graph, updates state with new k8Data
+   * if all nodes are full up to MAX_PODS_PER_NODE, adds a new node for
+   * remaining pods.
+   * @param podNames Array of names of pods to add to graph
+   */
   addPods(podNames) {
     // TODO : Make this a class attribute or give each Node a max-pods attribute
     let MAX_PODS_PER_NODE = 3;
@@ -128,26 +139,32 @@ class Viz extends React.Component {
     this.setState(this.state);
   }
 
+  /**
+   * createD3Graph()
+   * Creates svg and g to create d3 graph
+   */
   createD3Graph() {
-    // append the svg object to the body of the page
-    // appends a 'group' element to 'svg'
-    // moves the 'group' element to the top left margin
     this.svg = d3.select('#viz-svg').append('svg')
         .attr('width', this.width + this.margin.right + this.margin.left)
         .attr('height', this.height + this.margin.top + this.margin.bottom)
-      .append('g')
+        .append('g')
         .attr('transform', 'translate('
               + this.margin.left + ',' + this.margin.top + ')');
 
     this.updateTreeStructure();
   }
 
+  /**
+   * updateTreeStructure()
+   * Updates d3 graph tree structure whenever a new pod is added to a node.
+   * Should be refactored
+   */
   updateTreeStructure() {
     // Clear existing nodes before replacing with new graph
     this.svg.selectAll('.node').remove();
 
     // Assigns parent, children, height, depth
-    this.root = d3.hierarchy(this.state.k8Data, function(d) { return d.children; });
+    this.root = d3.hierarchy(this.state.k8Data, (d) => { return d.children; });
     this.root.x0 = this.height / 2;
     this.root.y0 = 0;
 
@@ -164,11 +181,11 @@ class Viz extends React.Component {
         links = treeData.descendants().slice(1);
 
     // Normalize for fixed-depth.
-    nodes.forEach(function(d){ d.y = d.depth * 180});
+    nodes.forEach((d) => { d.y = d.depth * 180});
 
     // Update the nodes...
     var node = this.svg.selectAll('g.node')
-        .data(nodes, function(d) {return d.id || (d.id = ++i); });
+        .data(nodes, (d) => {return d.id || (d.id = ++i); });
 
     // Enter any new nodes at the parent's previous position.
     var root = this.root;
@@ -182,11 +199,10 @@ class Viz extends React.Component {
 
     var nodeEnter = node.enter().append('g')
       .attr('class', 'node')
-      .attr('transform', function(d) {
+      .attr('transform', (d) => {
         return 'translate(' + root.y0 + ',' + root.x0 + ')'
       })
       .on('mouseover', () => {
-        console.log('event firing');
         return tooltip.style('opacity', 1);
       })
       .on('mousemove', (d) => {
@@ -198,7 +214,7 @@ class Viz extends React.Component {
 
     // Add Circle for the nodes
     nodeEnter.append('circle')
-        .attr('class', function(d) {
+        .attr('class', (d) => {
           if (d.data.class === undefined) {
             return 'node';
           } else {
@@ -210,21 +226,21 @@ class Viz extends React.Component {
     // Add labels for the nodes
     nodeEnter.append('text')
         .attr('dy', '-0.5em') // Place slightly to upper left/right
-        .attr('x', function(d) {
+        .attr('x', (d) => {
             return d.children || d._children ? -13 : 13;
         })
-        .attr('text-anchor', function(d) {
+        .attr('text-anchor', (d) => {
             return d.children || d._children ? 'end' : 'start';
         })
-        .text(function(d) { return d.data.name; });
+        .text((d) => { return d.data.name; });
 
-    // UPDATE
+    // Update nodes
     var nodeUpdate = nodeEnter.merge(node);
 
     // Transition to the proper position for the node
     nodeUpdate.transition()
       .duration(this.duration)
-      .attr('transform', function(d) {
+      .attr('transform', (d) => {
           return 'translate(' + d.y + ',' + d.x + ')';
        });
 
@@ -233,11 +249,10 @@ class Viz extends React.Component {
       .attr('r', 10)
       .attr('cursor', 'pointer');
 
-
     // Remove any exiting nodes
     var nodeExit = node.exit().transition()
         .duration(this.duration)
-        .attr('transform', function(d) {
+        .attr('transform', (d) => {
             return 'translate(' + root.y + ',' + root.x + ')';
         })
         .remove();
@@ -250,37 +265,35 @@ class Viz extends React.Component {
     nodeExit.select('text')
       .style('fill-opacity', 1e-6);
 
-    // Update the links...
     var link = this.svg.selectAll('path.link')
-        .data(links, function(d) { return d.id; });
+        .data(links, (d) => { return d.id; });
 
     // Enter any new links at the parent's previous position.
     var linkEnter = link.enter().insert('path', 'g')
         .attr('class', 'link')
-        .attr('d', function(d){
+        .attr('d', (d) => {
           var o = {x: root.x0, y: root.y0}
           return diagonal(o, o)
         });
 
-    // UPDATE
     var linkUpdate = linkEnter.merge(link);
 
     // Transition back to the parent element position
     linkUpdate.transition()
         .duration(this.duration)
-        .attr('d', function(d){ return diagonal(d, d.parent) });
+        .attr('d', (d) => { return diagonal(d, d.parent) });
 
     // Remove any exiting links
     var linkExit = link.exit().transition()
         .duration(this.duration)
-        .attr('d', function(d) {
+        .attr('d', (d) => {
           var o = {x: root.x, y: root.y}
           return diagonal(o, o);
         })
         .remove();
 
-    // Store the old positions for transition.
-    nodes.forEach(function(d){
+    // Store the old positions for transition
+    nodes.forEach((d) => {
       d.x0 = d.x;
       d.y0 = d.y;
     });

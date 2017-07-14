@@ -21,3 +21,5 @@ If you make changes, the app will rebuild and reload if there are no build issue
 
 - break up updateTreeStructure()
 - allow user to set amount of pods per node
+
+Acknowledgements: Tree diagram adapted from this d3 block: <https://bl.ocks.org/d3noob/43a860bc0024792f8803bba8ca0d5ecd>
