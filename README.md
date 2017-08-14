@@ -1,6 +1,6 @@
 # k8viz
 
-### Visualization of K8 Cluster for Heptio
+### Visualization of K8 Cluster
 
 #### To use the app locally:
 
